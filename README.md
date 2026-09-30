@@ -12,6 +12,8 @@ npx @jsonlee_12138/pi-commit commit
 
 也可全局安装：`npm install -g @jsonlee_12138/pi-commit`，然后运行 `pc` 或 `pi-commit`。开发时运行 `bun run src/cli.ts --help`、`bun run check`、`bun test`。
 
+`bun run test:e2e` 运行隔离的端到端测试，需要 Python 3 提供伪终端。测试启动真实 CLI、Pi SDK、Git 和本地模拟模型服务；不会调用真实模型或使用用户凭证。
+
 `pc model fallback <provider/model>` 设置备用模型；仅网络、超时、限流和服务不可用等可恢复错误会触发备用模型。`pc model list` 显示当前可用模型。配置写入 `~/.config/pi-commit/config.json`，登录凭证由 Pi 保存在自己的标准位置。本工具不复制凭证。
 
 `commit` 只读取当前目录所属 Git 仓库的已暂存改动，不自动暂存或 stash。生成前会拦截常见凭证文件和明显的密钥内容。模型只收到暂存 diff 与锁定的 `git-commit` skill，不获得写文件、执行命令或 MCP 工具。确认前会再次检查暂存内容。项目 Git hook 正常运行；hook 失败时保留 Git 错误，不自动绕过。
