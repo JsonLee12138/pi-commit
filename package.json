@@ -1,0 +1,25 @@
+{
+  "name": "@jsonlee_12138/pi-commit",
+  "version": "0.1.0",
+  "description": "Conventional Git commits with Pi",
+  "type": "module",
+  "bin": {
+    "pi-commit": "src/cli.ts",
+    "pc": "src/cli.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "0.99.1",
+    "pi-agy": "0.6.1"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "typescript": "5.9.3"
+  },
+  "files": ["src", "skills", "README.md", "LICENSE"],
+  "license": "MIT",
+  "engines": { "bun": ">=1.3.0" }
+}
