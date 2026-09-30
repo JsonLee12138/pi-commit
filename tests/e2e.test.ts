@@ -56,7 +56,10 @@ async function fixture() {
     },
   });
   await writeFile(join(agentDir, "models.json"), JSON.stringify({
-    providers: { local: { baseUrl: `http://127.0.0.1:${server.port}/v1`, api: "openai-completions", apiKey: "test-key", models: [{ id: "fixed" }, { id: "backup" }] } },
+    providers: {
+      local: { baseUrl: `http://127.0.0.1:${server.port}/v1`, api: "openai-completions", apiKey: "test-key", models: [{ id: "fixed" }, { id: "backup" }] },
+      other: { baseUrl: `http://127.0.0.1:${server.port}/v1`, api: "openai-completions", apiKey: "test-key", models: [{ id: "backup" }] },
+    },
   }));
   await writeFile(join(agentDir, "settings.json"), JSON.stringify({ retry: { enabled: false } }));
   await mkdir(join(home, ".config", "pi-commit"), { recursive: true });
@@ -157,13 +160,13 @@ test("默认模型服务不可用时切换一次备用模型并提交", async ()
 test("默认模型返回许可类 403 时改用备用模型并提交", async () => {
   const f = await fixture();
   try {
-    await writeFile(join(f.env.HOME!, ".config", "pi-commit", "config.json"), JSON.stringify({ model: "local/fixed", fallback: "local/backup" }));
+    await writeFile(join(f.env.HOME!, ".config", "pi-commit", "config.json"), JSON.stringify({ model: "local/fixed", fallback: "other/backup" }));
     await writeFile(join(f.repo, "note.txt"), "staged\n");
     await git(f.repo, ["add", "note.txt"]);
     f.failPrimary(403);
     const result = await run(f.repo, f.env, ["commit"], "y");
     expect(result.code).toBe(0);
-    expect(result.output).toContain("模型：local/backup");
+    expect(result.output).toContain("模型：other/backup");
     expect(result.output.trim()).toMatch(/Session ID: [\w-]+$/);
     expect(f.requests.filter((body) => JSON.parse(body).model === "backup")).toHaveLength(1);
     expect(await git(f.repo, ["log", "-1", "--format=%s"])).toBe("test: commit staged file\n");
