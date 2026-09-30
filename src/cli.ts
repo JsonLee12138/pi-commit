@@ -30,14 +30,16 @@ async function runCommit(cwd: string) {
       text = session.getLastAssistantText();
     } catch (error) {
       if (!config.fallback || !recoverable(error)) throw error;
+      const primaryError = error instanceof Error ? error.message : String(error);
       const [provider, ...parts] = config.fallback.split("/");
       const fallback = runtime.getModel(provider!, parts.join("/"));
       if (!fallback || !(await runtime.getAvailable()).some((item) => item.provider === fallback.provider && item.id === fallback.id)) {
-        throw new Error(`默认模型失败，备用模型不可用：${config.fallback}；原错误：${String(error)}`);
+        throw new Error(`默认模型失败：${primaryError}\n备用模型不可用：${config.fallback}`);
       }
+      console.error(`默认模型失败：${primaryError}\n尝试备用模型：${config.fallback}`);
       await session.setModel(fallback);
       usedModel = config.fallback;
-      await session.prompt("The previous model had a recoverable service failure. Generate the commit message for the staged diff already in this conversation. Output the message only.");
+      await session.prompt("The previous model could not complete this request. Generate the commit message for the staged diff already in this conversation. Output the message only.");
       const last = session.messages.at(-1);
       if (last?.role === "assistant" && last.errorMessage) throw new Error(`备用模型失败：${last.errorMessage}`);
       text = session.getLastAssistantText();

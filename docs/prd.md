@@ -17,7 +17,7 @@
 | --- | --- |
 | 运行目录 | 所有 Git 操作以调用命令时的 `cwd` 为准；不切换到 CLI 安装目录。 |
 | 技术栈 | TypeScript 源码直接由 Bun 运行，不使用 `tsdown` 或 Vite 打包。Pi SDK 作为固定版本依赖随 npm 包安装；Bun 是唯一要求的运行时。 |
-| 模型 | 配置默认模型和一个 fallback 模型；默认模型因可恢复的服务故障无法完成生成时，尝试 fallback。 |
+| 模型 | 配置默认模型和一个 fallback 模型；默认模型因可恢复的服务故障或 Provider 返回 403 授权拒绝而无法完成生成时，尝试 fallback。 |
 | 登录 | `pc login` 只列出当前支持的 Provider；`pc login <provider>` 才执行登录，在本 CLI 内复用 Pi 的认证实现和凭证存储；不启动 Pi TUI。 |
 | Skill | 提交任务只加载固定版本的 GitHub Awesome Copilot `git-commit` skill；不加载用户或项目的其他 skill。 |
 | pi-agy | 内置固定版本 `pi-agy` Provider 扩展，让 Antigravity 模型出现在登录和模型选择中。 |
@@ -58,8 +58,8 @@ Pi SDK 支持为模型注册自定义工具，因此提供一个只负责终端�
 
 ### 模型 fallback
 
-- 仅在默认模型发生超时、网络错误、限流或服务端不可用等可恢复故障，且尚未执行 `git commit` 时尝试一次 fallback。
-- 未配置凭证、模型不存在、Git 状态错误、用户取消、文案校验失败或 Git hook 失败时，不切换模型。
+- 仅在默认模型发生超时、网络错误、限流、服务端不可用或 Provider 返回 403 授权拒绝，且尚未执行 `git commit` 时尝试一次 fallback。403 不会自动修复默认 Provider 的账号权限。
+- 未配置凭证、401 认证失败、模型不存在、Git 状态错误、用户取消、文案校验失败或 Git hook 失败时，不切换模型。
 - fallback 使用同一次提交任务的上下文；最终输出标明实际使用的模型。
 
 ### 提交时的 lint 处理
@@ -109,7 +109,7 @@ Pi SDK 支持为模型注册自定义工具，因此提供一个只负责终端�
 
 1. 在任意 Git 仓库子目录执行 `pc commit`，Git 操作始终针对该仓库，且仅提交已暂存内容。
 2. `pc login` 仅列出 Pi Provider 且不产生登录副作用；`pc login <provider>` 能完成至少一种 API Key 登录和一种 OAuth 登录；`antigravity` 出现在列表中且能走 `pi-agy` 的登录流程。
-3. 配置默认及 fallback 模型后，可恢复的默认模型故障会触发一次 fallback；Git、认证和用户取消错误不会触发。
+3. 配置默认及 fallback 模型后，可恢复的默认模型故障或 Provider 返回 403 授权拒绝会触发一次 fallback；Git、本地凭证缺失、401 认证失败和用户取消不会触发。
 4. 提交任务只加载 `git-commit` skill。即使目标仓库和用户目录存在其他 skill，它们也不会进入该任务的可用 skill 列表。
 5. 模型不能通过本工具修改业务文件；未明确允许的 MCP 工具不可调用。
 6. `commit` 无全屏界面；成功、失败或取消后，只要创建了持久化 Pi session，最后一行均为 `Session ID: <id>`，且该 ID 能定位到对应记录。

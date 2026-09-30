@@ -37,14 +37,17 @@ async function fixture() {
   await git(repo, ["config", "user.email", "e2e@example.invalid"]);
   const requests: string[] = [];
   let onRequest: (() => Promise<void>) | undefined;
-  let failPrimary = false;
+  let primaryFailureStatus: number | undefined;
   const server = Bun.serve({
     port: 0,
     async fetch(request) {
       const body = await request.text();
       requests.push(body);
       if (onRequest) await onRequest();
-      if (failPrimary && JSON.parse(body).model === "fixed") return new Response("service unavailable", { status: 503 });
+      if (primaryFailureStatus && JSON.parse(body).model === "fixed") {
+        const message = primaryFailureStatus === 403 ? "You do not have a valid license of this product. (#3501)" : "service unavailable";
+        return Response.json({ error: { message } }, { status: primaryFailureStatus });
+      }
       const chunk = (content: string, finishReason: string | null) =>
         `data: ${JSON.stringify({ id: "chatcmpl-test", object: "chat.completion.chunk", created: 1, model: "fixed", choices: [{ index: 0, delta: { content }, finish_reason: finishReason }] })}\n\n`;
       return new Response(chunk("test: commit staged file", null) + chunk("", "stop") + "data: [DONE]\n\n", {
@@ -61,7 +64,7 @@ async function fixture() {
   const env = { ...process.env, HOME: home, PI_CODING_AGENT_DIR: agentDir, ANTIGRAVITY_NO_PREWARM: "1" };
   return { repo, agentDir, requests, env,
     onRequest: (fn: () => Promise<void>) => { onRequest = fn; },
-    failPrimary: () => { failPrimary = true; },
+    failPrimary: (status = 503) => { primaryFailureStatus = status; },
     close: async () => { server.stop(); await rm(dir, { recursive: true, force: true }); },
   };
 }
@@ -148,6 +151,22 @@ test("默认模型服务不可用时切换一次备用模型并提交", async ()
     expect(result.output).toContain("模型：local/backup");
     expect(f.requests.map((body) => JSON.parse(body).model)).toContain("fixed");
     expect(f.requests.filter((body) => JSON.parse(body).model === "backup")).toHaveLength(1);
+  } finally { await f.close(); }
+}, 25_000);
+
+test("默认模型返回许可类 403 时改用备用模型并提交", async () => {
+  const f = await fixture();
+  try {
+    await writeFile(join(f.env.HOME!, ".config", "pi-commit", "config.json"), JSON.stringify({ model: "local/fixed", fallback: "local/backup" }));
+    await writeFile(join(f.repo, "note.txt"), "staged\n");
+    await git(f.repo, ["add", "note.txt"]);
+    f.failPrimary(403);
+    const result = await run(f.repo, f.env, ["commit"], "y");
+    expect(result.code).toBe(0);
+    expect(result.output).toContain("模型：local/backup");
+    expect(result.output.trim()).toMatch(/Session ID: [\w-]+$/);
+    expect(f.requests.filter((body) => JSON.parse(body).model === "backup")).toHaveLength(1);
+    expect(await git(f.repo, ["log", "-1", "--format=%s"])).toBe("test: commit staged file\n");
   } finally { await f.close(); }
 }, 25_000);
 

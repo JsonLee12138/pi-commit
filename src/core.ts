@@ -44,5 +44,6 @@ export function commitMessage(text: string) {
 
 export function recoverable(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  return /(?:timeout|timed out|network|ECONN|ENOTFOUND|EAI_AGAIN|rate.?limit|429|50[0234]|service unavailable)/i.test(message);
+  if (/\b401\b/.test(message)) return false;
+  return /(?:timeout|timed out|network|ECONN|ENOTFOUND|EAI_AGAIN|rate.?limit|429|50[0234]|service unavailable|\b403\b)/i.test(message);
 }

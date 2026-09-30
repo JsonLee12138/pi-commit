@@ -25,5 +25,8 @@ test("文案与 fallback 条件", () => {
   expect(commitMessage("feat(cli): add commit flow\n\nBody")).toStartWith("feat(cli):");
   expect(() => commitMessage("hello")).toThrow();
   expect(recoverable(new Error("HTTP 429 rate limit"))).toBe(true);
+  expect(recoverable(new Error("Antigravity API error (403): You do not have a valid license of this product. (#3501)"))).toBe(true);
+  expect(recoverable(new Error("HTTP 401 invalid token"))).toBe(false);
+  expect(recoverable(new Error("HTTP 401 service unavailable"))).toBe(false);
   expect(recoverable(new Error("missing API key"))).toBe(false);
 });
