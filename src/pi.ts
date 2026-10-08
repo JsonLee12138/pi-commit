@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { DefaultResourceLoader, ModelRuntime, SessionManager, createAgentSession, getAgentDir } from "@earendil-works/pi-coding-agent";
 import type { AuthPrompt } from "@earendil-works/pi-ai";
 import { createInterface } from "node:readline/promises";
+import { spawnSync } from "node:child_process";
 
 const configPath = join(homedir(), ".config", "pi-commit", "config.json");
 const skillPath = fileURLToPath(new URL("../skills/git-commit/SKILL.md", import.meta.url));
@@ -43,13 +44,13 @@ async function authPrompt(prompt: AuthPrompt): Promise<string> {
   }
   if (prompt.type === "secret") {
     if (!process.stdin.isTTY) throw new Error(`需要终端输入：${prompt.message}`);
-    const noEcho = Bun.spawnSync(["stty", "-echo"], { stdin: "inherit", stdout: "ignore", stderr: "ignore" });
-    if (noEcho.exitCode !== 0) throw new Error("无法关闭密钥输入回显。");
+    const noEcho = spawnSync("stty", ["-echo"], { stdio: "inherit" });
+    if (noEcho.status !== 0) throw new Error("无法关闭密钥输入回显。");
     const rl = createInterface({ input: process.stdin, output: process.stderr, terminal: false });
     try { return (await rl.question(`${prompt.message}: `)).trim(); }
     finally {
       rl.close();
-      Bun.spawnSync(["stty", "echo"], { stdin: "inherit", stdout: "ignore", stderr: "ignore" });
+      spawnSync("stty", ["echo"], { stdio: "inherit" });
       console.error();
     }
   }

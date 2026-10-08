@@ -1,6 +1,6 @@
 # pi-commit
 
-用 Pi 为已暂存的改动生成 Conventional Commit 文案，确认后由 CLI 执行 `git commit`。需要 Bun 1.3+。
+用 Pi 为已暂存的改动生成 Conventional Commit 文案，确认后由 CLI 执行 `git commit`。需要 Node.js 20.19+。
 
 ```sh
 npx @jsonlee_12138/pi-commit login
@@ -10,7 +10,9 @@ git add <files>
 npx @jsonlee_12138/pi-commit commit
 ```
 
-也可全局安装：`npm install -g @jsonlee_12138/pi-commit`，然后运行 `pc` 或 `pi-commit`。开发时运行 `bun run src/cli.ts --help`、`bun run check`、`bun test`。
+也可全局安装：`npm install -g @jsonlee_12138/pi-commit`，然后运行 `pc` 或 `pi-commit`。发布包由 npm 或 pnpm 在打包时自动构建。
+
+开发构建可用 `npm install` / `pnpm install` 后运行 `npm run build` / `pnpm build`。当前测试脚本使用 Bun：`bun run check`、`bun test` 和 `bun run test:e2e`。
 
 `bun run test:e2e` 运行隔离的端到端测试，需要 Python 3 提供伪终端。测试启动真实 CLI、Pi SDK、Git 和本地模拟模型服务；不会调用真实模型或使用用户凭证。
 

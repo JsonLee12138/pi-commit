@@ -1,6 +1,8 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { agentForCommit, ask, login, modelCommand, readConfig, skillText } from "./pi.ts";
 import { commitMessage, git, recoverable, staged } from "./core.ts";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const help = `pi-commit / pc
 
@@ -74,7 +76,7 @@ async function main(args: string[]) {
   throw new Error(`未知命令。\n${help}`);
 }
 
-if (import.meta.main) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main(process.argv.slice(2)).catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

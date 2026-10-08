@@ -1,6 +1,6 @@
 {
   "name": "@jsonlee_12138/pi-commit",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.2",
   "description": "Conventional Git commits with Pi",
   "type": "module",
   "repository": {
@@ -8,10 +8,12 @@
     "url": "https://github.com/JsonLee12138/pi-commit.git"
   },
   "bin": {
-    "pi-commit": "src/cli.ts",
-    "pc": "src/cli.ts"
+    "pi-commit": "dist/cli.mjs",
+    "pc": "dist/cli.mjs"
   },
   "scripts": {
+    "build": "tsdown",
+    "prepack": "npm run build",
     "check": "tsc --noEmit",
     "test": "bun test",
     "test:e2e": "bun test tests/e2e.test.ts"
@@ -22,9 +24,10 @@
   },
   "devDependencies": {
     "@types/bun": "1.3.14",
+    "tsdown": "^0.23.0",
     "typescript": "5.9.3"
   },
-  "files": ["src", "skills", "README.md", "LICENSE"],
+  "files": ["dist", "skills", "README.md", "LICENSE"],
   "license": "MIT",
-  "engines": { "bun": ">=1.3.0" }
+  "engines": { "node": ">=20.19.0" }
 }

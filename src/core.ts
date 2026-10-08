@@ -1,23 +1,35 @@
 import { createHash } from "node:crypto";
+import { spawn } from "node:child_process";
+import type { Readable } from "node:stream";
 
 export async function git(cwd: string, args: string[], input?: string) {
-  const child = Bun.spawn(["git", ...args], {
+  const child = spawn("git", args, {
     cwd,
-    stdin: input === undefined ? "ignore" : "pipe",
-    stdout: "pipe",
-    stderr: "pipe",
+    stdio: [input === undefined ? "ignore" : "pipe", "pipe", "pipe"],
   });
-  if (input !== undefined && child.stdin) {
-    child.stdin.write(input);
-    child.stdin.end();
-  }
+  const stdoutPromise = collect(child.stdout!);
+  const stderrPromise = collect(child.stderr!);
+  if (input !== undefined) child.stdin?.end(input);
   const [stdout, stderr, code] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
+    stdoutPromise,
+    stderrPromise,
+    new Promise<number>((resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", (exitCode) => resolve(exitCode ?? 1));
+    }),
   ]);
   if (code !== 0) throw new Error((stderr || stdout).trim() || `git ${args[0]} failed (${code})`);
   return stdout;
+}
+
+function collect(stream: Readable) {
+  return new Promise<string>((resolve, reject) => {
+    let output = "";
+    stream.setEncoding("utf8");
+    stream.on("data", (chunk: string) => { output += chunk; });
+    stream.once("error", reject);
+    stream.once("end", () => resolve(output));
+  });
 }
 
 export async function staged(cwd: string) {
