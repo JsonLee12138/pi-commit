@@ -1,6 +1,6 @@
 {
   "name": "@jsonlee_12138/pi-commit",
-  "version": "0.1.0.beta.1",
+  "version": "0.1.0-beta.1",
   "description": "Conventional Git commits with Pi",
   "type": "module",
   "repository": {
