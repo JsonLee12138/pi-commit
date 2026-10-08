@@ -28,6 +28,15 @@ jobs:
       - name: Type check
         run: bun run check
 
+      - name: Build distributable
+        run: bun run build
+
+      - name: Verify CLI entry point
+        run: test -f dist/cli.mjs
+
+      - name: Verify npm package contents
+        run: npm pack --dry-run --ignore-scripts
+
       - name: Run unit and integration tests
         run: bun test
 
