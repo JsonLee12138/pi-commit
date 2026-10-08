@@ -1,0 +1,32 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org/
+
+      - name: Verify release tag matches package version
+        run: node -e 'const p=require("./package.json"); const tag=process.env.GITHUB_REF_NAME; if (tag !== `v${p.version}`) { console.error(`Tag ${tag} does not match package version ${p.version}`); process.exit(1); }'
+
+      - name: Publish package with provenance
+        run: npm publish --provenance --access public
